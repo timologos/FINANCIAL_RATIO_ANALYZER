@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Financial Ratio Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF2EF;--surface:#F8FAF8;--ink:#1B2A2F;--muted:#55666B;--rule:#C5D3CF;--accent:#2F5D8A;--bad:#B23A48;--ok:#2E7D5B;--warn:#9A6A12;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#131C1F;--surface:#1A2629;--ink:#E6EEEB;--muted:#9AABAA;--rule:#2F4044;--accent:#7FB0DE;--bad:#E27D89;--ok:#6CC7A0;--warn:#E3B45A}}
+:root[data-theme="dark"]{--paper:#131C1F;--surface:#1A2629;--ink:#E6EEEB;--muted:#9AABAA;--rule:#2F4044;--accent:#7FB0DE;--bad:#E27D89;--ok:#6CC7A0;--warn:#E3B45A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1rem/1.55 var(--sans)}
+.wrap{max-width:1000px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+h1{font:600 clamp(1.9rem,6vw,2.7rem)/1.1 var(--serif);margin:0 0 .5rem}
+.lede{color:var(--muted);margin:0 0 1.5rem;max-width:60ch}
+.grid{display:grid;gap:1.5rem;grid-template-columns:1fr}
+@media (min-width:800px){.grid{grid-template-columns:340px 1fr;align-items:start}}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:1.1rem 1.1rem 1.2rem}
+h2{font:600 1.15rem var(--serif);margin:0 0 .7rem;padding-bottom:.4rem;border-bottom:2px solid var(--ink)}
+h2:not(:first-child){margin-top:1.4rem}
+label{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:.25rem 0;font-size:.95rem}
+input{width:130px;font:inherit;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:.35rem .5rem}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.1rem}
+button{font:500 .95rem var(--sans);padding:.55rem 1rem;border-radius:6px;border:1px solid var(--ink);cursor:pointer;background:var(--ink);color:var(--paper)}
+button.ghost{background:transparent;color:var(--ink)}
+.check{margin-top:.9rem;font-size:.9rem;color:var(--muted)}
+.summary{font:600 1.2rem var(--serif);margin:0 0 1rem}
+.empty{color:var(--muted)}
+.group{margin:0 0 1.4rem}
+.ratio{display:grid;grid-template-columns:1fr auto;gap:.1rem 1rem;padding:.7rem 0;border-bottom:1px solid var(--rule)}
+.ratio:last-child{border-bottom:0}
+.ratio b{font-weight:600}
+.val{font:600 1.2rem var(--serif);font-variant-numeric:tabular-nums;text-align:right}
+.read{grid-column:1/-1;color:var(--muted);font-size:.92rem}
+.tag{font-size:.82rem;font-weight:600;margin-left:.5rem}
+.good{color:var(--ok)}.watch{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--muted)}
+.note{margin-top:1.5rem;font-size:.85rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Financial Ratio Analyzer</h1>
+  <p class="lede">Enter a company’s figures and get liquidity, profitability, leverage and efficiency ratios, each with a plain-English reading. Use any currency, but keep it consistent.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Income statement</h2>
+      <label>Revenue <input data-k="rev" type="number" inputmode="decimal"></label>
+      <label>Cost of goods sold <input data-k="cogs" type="number" inputmode="decimal"></label>
+      <label>Operating expenses <input data-k="opex" type="number" inputmode="decimal"></label>
+      <label>Interest expense <input data-k="int" type="number" inputmode="decimal"></label>
+      <label>Net income <input data-k="ni" type="number" inputmode="decimal"></label>
+      <h2>Balance sheet</h2>
+      <label>Cash <input data-k="cash" type="number" inputmode="decimal"></label>
+      <label>Receivables <input data-k="ar" type="number" inputmode="decimal"></label>
+      <label>Inventory <input data-k="inv" type="number" inputmode="decimal"></label>
+      <label>Other current assets <input data-k="oca" type="number" inputmode="decimal"></label>
+      <label>Total assets <input data-k="ta" type="number" inputmode="decimal"></label>
+      <label>Current liabilities <input data-k="cl" type="number" inputmode="decimal"></label>
+      <label>Total liabilities <input data-k="tl" type="number" inputmode="decimal"></label>
+      <label>Shareholders’ equity <input data-k="eq" type="number" inputmode="decimal"></label>
+      <div class="check" id="check"></div>
+      <div class="row"><button id="ex" type="button">Load example</button><button id="clr" type="button" class="ghost">Clear</button></div>
+    </div>
+
+    <div class="card" id="out" aria-live="polite"></div>
+  </div>
+  <p class="note">Benchmarks are general rules of thumb. Healthy ranges differ a lot by industry, so compare against peers in the same sector. This is an educational tool, not financial advice.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), inputs=[...document.querySelectorAll('input')];
+const EX={rev:1200000,cogs:720000,opex:300000,int:20000,ni:120000,cash:150000,ar:180000,inv:200000,oca:20000,ta:1100000,cl:280000,tl:600000,eq:500000};
+const T={good:'Healthy',watch:'Watch',bad:'Concern',info:'Info'};
+const d=(a,b)=>(b===0||!isFinite(a/b))?null:a/b;
+const pct=x=>(x*100).toFixed(1)+'%', times=x=>x.toFixed(2)+'x', days=x=>Math.round(x)+' days';
+
+const R=[
+ {g:'Liquidity',n:'Current ratio',c:v=>d(v.cash+v.ar+v.inv+v.oca,v.cl),f:times,
+  s:x=>x<1?'bad':x<1.5?'watch':x<=3?'good':'watch',
+  t:x=>x<1?'Current liabilities exceed current assets, so short-term bills could be hard to cover.':x<1.5?'Short-term obligations are covered, but with a thin cushion.':x<=3?'Comfortably able to cover short-term obligations.':'Very liquid, though a lot of capital may be sitting idle.'},
+ {g:'Liquidity',n:'Quick ratio',c:v=>d(v.cash+v.ar,v.cl),f:times,
+  s:x=>x<.8?'bad':x<1?'watch':'good',
+  t:x=>x<1?'Without selling inventory, liquid assets do not fully cover short-term debts.':'Cash and receivables alone cover short-term debts.'},
+ {g:'Profitability',n:'Gross margin',c:v=>d(v.rev-v.cogs,v.rev),f:pct,
+  s:x=>x<.2?'watch':'good',
+  t:x=>'For every 100 of sales, '+(x*100).toFixed(0)+' remains after direct costs. Compare with peers, as this varies widely by industry.'},
+ {g:'Profitability',n:'Operating margin',c:v=>d(v.rev-v.cogs-v.opex,v.rev),f:pct,
+  s:x=>x<0?'bad':x<.08?'watch':'good',
+  t:x=>x<0?'Core operations are losing money before interest and tax.':x<.08?'Operations are profitable, but margins are slim.':'Core operations generate a solid profit.'},
+ {g:'Profitability',n:'Net margin',c:v=>d(v.ni,v.rev),f:pct,
+  s:x=>x<0?'bad':x<.05?'watch':'good',
+  t:x=>x<0?'The company is making a net loss.':x<.05?'Profitable, but little of each sale reaches the bottom line.':'A healthy share of revenue becomes net profit.'},
+ {g:'Profitability',n:'Return on assets (ROA)',c:v=>d(v.ni,v.ta),f:pct,
+  s:x=>x<0?'bad':x<.05?'watch':'good',
+  t:x=>x<0?'Assets are not generating profit.':x<.05?'Assets earn a modest return.':'Assets are being used productively to earn profit.'},
+ {g:'Profitability',n:'Return on equity (ROE)',c:v=>d(v.ni,v.eq),f:pct,
+  s:x=>x<0?'bad':x<.1?'watch':'good',
+  t:x=>x<0?'Shareholders’ capital is losing value.':x<.1?'Returns to shareholders are below a typical 10% target.':'Strong return on shareholders’ money. Check that it is not driven by heavy debt.'},
+ {g:'Leverage',n:'Debt-to-equity',c:v=>v.eq<=0?null:d(v.tl,v.eq),f:times,
+  s:x=>x>2?'bad':x>1?'watch':'good',
+  t:x=>x>2?'Creditors fund far more of the business than owners do, which raises risk.':x>1?'Debt exceeds equity. Manageable, but sensitive to downturns.':'Equity funds more of the business than debt does.'},
+ {g:'Leverage',n:'Debt ratio',c:v=>d(v.tl,v.ta),f:pct,
+  s:x=>x>.7?'bad':x>.5?'watch':'good',
+  t:x=>(x*100).toFixed(0)+'% of assets are financed by liabilities.'},
+ {g:'Leverage',n:'Interest coverage',c:v=>v.int>0?d(v.rev-v.cogs-v.opex,v.int):null,f:times,
+  s:x=>x<1.5?'bad':x<3?'watch':'good',
+  t:x=>x<1.5?'Operating profit barely covers interest payments.':x<3?'Interest is covered, but with limited room for error.':'Operating profit covers interest payments comfortably.'},
+ {g:'Efficiency',n:'Asset turnover',c:v=>d(v.rev,v.ta),f:times,
+  s:x=>x<.5?'watch':'good',
+  t:x=>'Each unit of assets generates '+x.toFixed(2)+' of revenue. Capital-heavy industries naturally score lower.'},
+ {g:'Efficiency',n:'Days sales outstanding',c:v=>{const x=d(v.ar,v.rev);return x===null?null:x*365},f:days,
+  s:x=>x>90?'bad':x>60?'watch':'good',
+  t:x=>x>60?'Customers take a long time to pay, which ties up cash.':'Customers pay reasonably quickly.'}
+];
+
+function read(){const v={};inputs.forEach(i=>v[i.dataset.k]=parseFloat(i.value)||0);return v}
+function render(){
+  const v=read(), has=Object.values(v).some(x=>x!==0);
+  const chk=$('#check');
+  if(v.ta||v.tl||v.eq){const diff=v.ta-(v.tl+v.eq);
+    chk.textContent=Math.abs(diff)<1?'✓ Balance sheet balances: assets = liabilities + equity.':'⚠ Assets differ from liabilities + equity by '+Math.abs(diff).toLocaleString()+'. Check your figures.';
+  } else chk.textContent='';
+  const out=$('#out');
+  if(!has){out.innerHTML='<p class="empty">Fill in the figures on the left, or press “Load example” to see how it works.</p>';return}
+  let cnt={good:0,watch:0,bad:0}, groups={}, shown=0;
+  R.forEach(r=>{
+    const x=r.c(v); if(x===null||isNaN(x))return;
+    const st=r.s(x); cnt[st]++; shown++;
+    (groups[r.g]=groups[r.g]||[]).push(`<div class="ratio"><div><b>${r.n}</b><span class="tag ${st}">${T[st]}</span></div><div class="val">${r.f(x)}</div><div class="read">${r.t(x)}</div></div>`);
+  });
+  if(!shown){out.innerHTML='<p class="empty">Not enough data yet to calculate any ratio.</p>';return}
+  out.innerHTML=`<p class="summary">${shown} ratios: ${cnt.good} healthy, ${cnt.watch} to watch, ${cnt.bad} of concern</p>`+
+    Object.keys(groups).map(g=>`<div class="group"><h2>${g}</h2>${groups[g].join('')}</div>`).join('');
+}
+inputs.forEach(i=>i.addEventListener('input',render));
+$('#ex').onclick=()=>{inputs.forEach(i=>i.value=EX[i.dataset.k]);render()};
+$('#clr').onclick=()=>{inputs.forEach(i=>i.value='');render()};
+render();
+</script>
+</body>
+</html>
