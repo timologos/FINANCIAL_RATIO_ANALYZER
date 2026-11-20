@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Financial Ratio Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF2EF;--surface:#F8FAF8;--ink:#1B2A2F;--muted:#55666B;--rule:#C5D3CF;--accent:#2F5D8A;--bad:#B23A48;--ok:#2E7D5B;--warn:#9A6A12;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#131C1F;--surface:#1A2629;--ink:#E6EEEB;--muted:#9AABAA;--rule:#2F4044;--accent:#7FB0DE;--bad:#E27D89;--ok:#6CC7A0;--warn:#E3B45A}}
+:root[data-theme="dark"]{--paper:#131C1F;--surface:#1A2629;--ink:#E6EEEB;--muted:#9AABAA;--rule:#2F4044;--accent:#7FB0DE;--bad:#E27D89;--ok:#6CC7A0;--warn:#E3B45A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1rem/1.55 var(--sans)}
+.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+h1{font:600 clamp(1.9rem,6vw,2.7rem)/1.1 var(--serif);margin:0 0 .5rem}
+.lede{color:var(--muted);margin:0 0 1.5rem;max-width:62ch}
+.grid{display:grid;gap:1.5rem;grid-template-columns:1fr}
+@media (min-width:860px){.grid{grid-template-columns:400px 1fr;align-items:start}}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:1.1rem 1.1rem 1.2rem}
+h2{font:600 1.15rem var(--serif);margin:0 0 .7rem;padding-bottom:.4rem;border-bottom:2px solid var(--ink)}
+h2:not(:first-child){margin-top:1.4rem}
+label,.hd{display:grid;grid-template-columns:1fr 92px 92px;align-items:center;gap:.5rem;padding:.25rem 0;font-size:.95rem}
+.hd{font-size:.8rem;color:var(--muted);font-weight:600;padding-top:0}
+.hd span+span{text-align:right}
+input{width:100%;font:inherit;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:.35rem .5rem}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.1rem}
+button{font:500 .95rem var(--sans);padding:.55rem 1rem;border-radius:6px;border:1px solid var(--ink);cursor:pointer;background:var(--ink);color:var(--paper)}
+button.ghost{background:transparent;color:var(--ink)}
+.check{margin-top:.9rem;font-size:.9rem;color:var(--muted)}
+.summary{font:600 1.2rem var(--serif);margin:0 0 .4rem}
+.trend{margin:0 0 1.2rem;color:var(--muted);font-size:.95rem;max-width:68ch}
+.empty{color:var(--muted)}
+.group{margin:0 0 1.4rem}
+.ratio{display:grid;grid-template-columns:1fr auto;gap:.1rem 1rem;padding:.7rem 0;border-bottom:1px solid var(--rule)}
+.ratio:last-child{border-bottom:0}
+.ratio b{font-weight:600}
+.val{font:600 1.2rem var(--serif);font-variant-numeric:tabular-nums;text-align:right}
+.dl{display:block;font:600 .8rem var(--sans);font-variant-numeric:tabular-nums;text-align:right}
+.read{grid-column:1/-1;color:var(--muted);font-size:.92rem}
+.tag{font-size:.82rem;font-weight:600;margin-left:.5rem}
+.good{color:var(--ok)}.watch{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--muted)}
+.dp{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin:.3rem 0 .8rem}
+.dp div{border:1px solid var(--rule);border-radius:4px;padding:.5rem .7rem;font-size:.85rem;color:var(--muted)}
+.dp .val{display:block;text-align:left;color:var(--ink)}
+.dp .dl{text-align:left}
+.pr{display:none}
+.note{margin-top:1.5rem;font-size:.85rem;color:var(--muted)}
+@media print{
+  html:root:root:root{--paper:#fff;--surface:#fff;--ink:#111;--muted:#444;--rule:#bbb;--accent:#2F5D8A;--bad:#9b2332;--ok:#1f6a49;--warn:#7d5508}
+  #inp,.row{display:none}
+  .grid{display:block}
+  .card{border:0;padding:0}
+  .pr{display:block;margin-bottom:1rem;color:var(--muted);font-size:.9rem}
+  .group,.ratio{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Financial Ratio Analyzer</h1>
+  <p class="lede">Enter a company’s figures for the current year, and optionally a prior year, to get ratios with change arrows, a DuPont breakdown and an Altman Z-score. Use any currency, but keep it consistent.</p>
+
+  <div class="grid">
+    <div class="card" id="inp">
+      <div class="hd"><span></span><span>Current</span><span>Prior (optional)</span></div>
+      <div id="form"></div>
+      <div class="check" id="check"></div>
+      <div class="row"><button id="ex" type="button">Load example</button><button id="clr" type="button" class="ghost">Clear</button></div>
+    </div>
+
+    <div class="card">
+      <div class="pr" id="pr"></div>
+      <div id="out" aria-live="polite"></div>
+      <div class="row"><button id="print" type="button" class="ghost">Print / save as PDF</button></div>
+    </div>
+  </div>
+  <p class="note">Benchmarks are general rules of thumb. Healthy ranges differ a lot by industry, so compare against peers in the same sector. The Z-score uses the Z′ model for private manufacturers with book equity, so treat it as a rough signal for other sectors. This is an educational tool, not financial advice.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const F=[['Income statement',[['rev','Revenue'],['cogs','Cost of goods sold'],['opex','Operating expenses'],['int','Interest expense'],['ni','Net income']]],
+['Balance sheet',[['cash','Cash'],['ar','Receivables'],['inv','Inventory'],['oca','Other current assets'],['ta','Total assets'],['cl','Current liabilities'],['tl','Total liabilities'],['eq','Shareholders’ equity'],['re','Retained earnings']]]];
+$('#form').innerHTML=F.map(([h,fs])=>`<h2>${h}</h2>`+fs.map(([k,n])=>`<label><span>${n}</span><input data-k="${k}" data-y="c" type="number" inputmode="decimal" aria-label="${n}, current year"><input data-k="${k}" data-y="p" type="number" inputmode="decimal" aria-label="${n}, prior year"></label>`).join('')).join('');
+const inputs=[...document.querySelectorAll('input')];
+const EX={c:{rev:1200000,cogs:720000,opex:300000,int:20000,ni:120000,cash:150000,ar:180000,inv:200000,oca:20000,ta:1100000,cl:280000,tl:600000,eq:500000,re:300000},
+          p:{rev:1050000,cogs:640000,opex:280000,int:22000,ni:85000,cash:110000,ar:170000,inv:210000,oca:18000,ta:1040000,cl:290000,tl:590000,eq:450000,re:250000}};
+const T={good:'Healthy',watch:'Watch',bad:'Concern'};
+const d=(a,b)=>(b===0||!isFinite(a/b))?null:a/b;
+const U={p:{f:x=>(x*100).toFixed(1)+'%',d:x=>(x*100).toFixed(1)+' pp',e:.0005},
+         x:{f:x=>x.toFixed(2)+'x',d:x=>x.toFixed(2)+'x',e:.005},
+         d:{f:x=>Math.round(x)+' days',d:x=>Math.round(x)+' d',e:.5}};
+const sg=(x,s)=>(x>0?'+':'')+s;
+
+/* g=group, u=unit, h=1 if higher is better (-1 if lower is better) */
+const R=[
+ {g:'Liquidity',n:'Current ratio',u:'x',h:1,c:v=>d(v.cash+v.ar+v.inv+v.oca,v.cl),
+  s:x=>x<1?'bad':x<1.5?'watch':x<=3?'good':'watch',
+  t:x=>x<1?'Current liabilities exceed current assets, so short-term bills could be hard to cover.':x<1.5?'Short-term obligations are covered, but with a thin cushion.':x<=3?'Comfortably able to cover short-term obligations.':'Very liquid, though a lot of capital may be sitting idle.'},
+ {g:'Liquidity',n:'Quick ratio',u:'x',h:1,c:v=>d(v.cash+v.ar,v.cl),
+  s:x=>x<.8?'bad':x<1?'watch':'good',
+  t:x=>x<1?'Without selling inventory, liquid assets do not fully cover short-term debts.':'Cash and receivables alone cover short-term debts.'},
+ {g:'Profitability',n:'Gross margin',u:'p',h:1,c:v=>d(v.rev-v.cogs,v.rev),
+  s:x=>x<.2?'watch':'good',
+  t:x=>'For every 100 of sales, '+(x*100).toFixed(0)+' remains after direct costs. Compare with peers, as this varies widely by industry.'},
+ {g:'Profitability',n:'Operating margin',u:'p',h:1,c:v=>d(v.rev-v.cogs-v.opex,v.rev),
+  s:x=>x<0?'bad':x<.08?'watch':'good',
+  t:x=>x<0?'Core operations are losing money before interest and tax.':x<.08?'Operations are profitable, but margins are slim.':'Core operations generate a solid profit.'},
+ {g:'Profitability',n:'Net margin',u:'p',h:1,c:v=>d(v.ni,v.rev),
+  s:x=>x<0?'bad':x<.05?'watch':'good',
+  t:x=>x<0?'The company is making a net loss.':x<.05?'Profitable, but little of each sale reaches the bottom line.':'A healthy share of revenue becomes net profit.'},
+ {g:'Profitability',n:'Return on assets (ROA)',u:'p',h:1,c:v=>d(v.ni,v.ta),
+  s:x=>x<0?'bad':x<.05?'watch':'good',
+  t:x=>x<0?'Assets are not generating profit.':x<.05?'Assets earn a modest return.':'Assets are being used productively to earn profit.'},
+ {g:'Profitability',n:'Return on equity (ROE)',u:'p',h:1,c:v=>d(v.ni,v.eq),
+  s:x=>x<0?'bad':x<.1?'watch':'good',
+  t:x=>x<0?'Shareholders’ capital is losing value.':x<.1?'Returns to shareholders are below a typical 10% target.':'Strong return on shareholders’ money. Check that it is not driven by heavy debt.'},
+ {g:'Leverage',n:'Debt-to-equity',u:'x',h:-1,c:v=>v.eq<=0?null:d(v.tl,v.eq),
+  s:x=>x>2?'bad':x>1?'watch':'good',
+  t:x=>x>2?'Creditors fund far more of the business than owners do, which raises risk.':x>1?'Debt exceeds equity. Manageable, but sensitive to downturns.':'Equity funds more of the business than debt does.'},
+ {g:'Leverage',n:'Debt ratio',u:'p',h:-1,c:v=>d(v.tl,v.ta),
+  s:x=>x>.7?'bad':x>.5?'watch':'good',
+  t:x=>(x*100).toFixed(0)+'% of assets are financed by liabilities.'},
+ {g:'Leverage',n:'Interest coverage',u:'x',h:1,c:v=>v.int>0?d(v.rev-v.cogs-v.opex,v.int):null,
+  s:x=>x<1.5?'bad':x<3?'watch':'good',
+  t:x=>x<1.5?'Operating profit barely covers interest payments.':x<3?'Interest is covered, but with limited room for error.':'Operating profit covers interest payments comfortably.'},
+ {g:'Efficiency',n:'Asset turnover',u:'x',h:1,c:v=>d(v.rev,v.ta),
+  s:x=>x<.5?'watch':'good',
+  t:x=>'Each unit of assets generates '+x.toFixed(2)+' of revenue. Capital-heavy industries naturally score lower.'},
+ {g:'Efficiency',n:'Days sales outstanding',u:'d',h:-1,c:v=>{const x=d(v.ar,v.rev);return x===null?null:x*365},
+  s:x=>x>90?'bad':x>60?'watch':'good',
+  t:x=>x>60?'Customers take a long time to pay, which ties up cash.':'Customers pay reasonably quickly.'}
+];
+
+/* Altman Z' (private firms, book equity): 0.717 X1 + 0.847 X2 + 3.107 X3 + 0.420 X4 + 0.998 X5 */
+const Z=v=>{if(!(v.ta>0&&v.tl>0))return null;const e=v.rev-v.cogs-v.opex;
+  return .717*(v.cash+v.ar+v.inv+v.oca-v.cl)/v.ta+.847*v.re/v.ta+3.107*e/v.ta+.42*v.eq/v.tl+.998*v.rev/v.ta};
+const zs=x=>x<1.23?'bad':x<2.9?'watch':'good';
+const zt=x=>x<1.23?'Distress zone: the profile resembles companies that later failed.':x<2.9?'Grey zone: some warning signs, so look closely at liquidity and earnings.':'Safe zone: financial profile resembles stable companies.';
+
+function arrow(a,b,u,h){
+  if(b==null||a==null)return '';
+  const df=a-b;
+  if(Math.abs(df)<U[u].e)return '<small class="dl info">● no change</small>';
+  return `<small class="dl ${df*h>0?'good':'bad'}">${df>0?'▲':'▼'} ${sg(df,U[u].d(df))}</small>`;
+}
+const read=y=>{const v={};inputs.forEach(i=>{if(i.dataset.y===y)v[i.dataset.k]=parseFloat(i.value)||0});return v};
+const has=v=>Object.values(v).some(x=>x!==0);
+const bal=(v,l)=>{if(!(v.ta||v.tl||v.eq))return '';const df=v.ta-(v.tl+v.eq);
+  return Math.abs(df)<1?`✓ ${l}: balance sheet balances.`:`⚠ ${l}: assets differ from liabilities + equity by ${Math.abs(df).toLocaleString()}.`};
+
+function dupont(c,p,hp){
+  const f=v=>(v.rev>0&&v.ta>0&&v.eq>0)?{m:v.ni/v.rev,t:v.rev/v.ta,l:v.ta/v.eq}:null;
+  const a=f(c); if(!a)return '';
+  const b=hp?f(p):null;
+  const cell=(l,k,u)=>`<div>${l}<span class="val">${U[u].f(a[k])}</span>${b?arrow(a[k],b[k],u,1):''}</div>`;
+  const roe=a.m*a.t*a.l, roeP=b?b.m*b.t*b.l:null;
+  let msg=a.l>2.5?'A high equity multiplier means ROE leans on borrowed money, not just operating performance.':'ROE is explained mainly by margin and turnover, not heavy leverage.';
+  if(b&&a.m>0&&b.m>0&&Math.abs(roe-roeP)>.0005){
+    const ch=[['net margin',Math.log(a.m/b.m)],['asset turnover',Math.log(a.t/b.t)],['equity multiplier (leverage)',Math.log(a.l/b.l)]];
+    const top=ch.reduce((x,y)=>Math.abs(y[1])>Math.abs(x[1])?y:x);
+    msg=`ROE ${roe>roeP?'rose':'fell'} from ${U.p.f(roeP)} to ${U.p.f(roe)}, driven mostly by ${top[0]} (${top[1]>0?'up':'down'} ${Math.abs((Math.exp(top[1])-1)*100).toFixed(0)}%). `+msg;
+  }
+  return `<div class="group"><h2>DuPont analysis</h2><div class="dp">${cell('Net margin','m','p')}${cell('× Asset turnover','t','x')}${cell('× Equity multiplier','l','x')}<div>= ROE<span class="val">${U.p.f(roe)}</span>${b?arrow(roe,roeP,'p',1):''}</div></div><div class="read">${msg}</div></div>`;
+}
+
+function render(){
+  const c=read('c'), p=read('p'), hp=has(p), out=$('#out');
+  $('#check').innerHTML=[bal(c,'Current'),hp?bal(p,'Prior'):''].filter(Boolean).join('<br>');
+  $('#pr').textContent='Financial ratio analysis, generated '+new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  if(!has(c)){out.innerHTML='<p class="empty">Fill in the current-year figures on the left, or press “Load example” to see how it works. Add a prior year to see changes and trends.</p>';return}
+  const cnt={good:0,watch:0,bad:0}, groups={}, ch=[];
+  R.forEach(r=>{
+    const x=r.c(c); if(x===null||isNaN(x))return;
+    const y=hp?r.c(p):null, st=r.s(x); cnt[st]++;
+    if(y!=null&&!isNaN(y)){const df=x-y;if(Math.abs(df)>=U[r.u].e&&y!==0)ch.push({n:r.n,better:df*r.h>0,rel:Math.abs(df/y),txt:sg(df,U[r.u].d(df))})}
+    (groups[r.g]=groups[r.g]||[]).push(`<div class="ratio"><div><b>${r.n}</b><span class="tag ${st}">${T[st]}</span></div><div class="val">${U[r.u].f(x)}${arrow(x,y,r.u,r.h)}</div><div class="read">${r.t(x)}</div></div>`);
+  });
+  const shown=cnt.good+cnt.watch+cnt.bad;
+  let html=shown?`<p class="summary">${shown} ratios: ${cnt.good} healthy, ${cnt.watch} to watch, ${cnt.bad} of concern</p>`:'';
+  if(hp&&ch.length){
+    const up=ch.filter(x=>x.better), dn=ch.filter(x=>!x.better), big=a=>a.reduce((m,x)=>x.rel>m.rel?x:m);
+    html+=`<p class="trend">Versus the prior year, ${up.length} ratio${up.length==1?'':'s'} improved and ${dn.length} weakened.`+
+      (up.length?` Biggest improvement: ${big(up).n} (${big(up).txt}).`:'')+(dn.length?` Biggest deterioration: ${big(dn).n} (${big(dn).txt}).`:'')+'</p>';
+  } else if(hp) html+='<p class="trend">No meaningful change from the prior year.</p>';
+  if(!shown&&!Z(c)){out.innerHTML='<p class="empty">Not enough data yet to calculate any ratio.</p>';return}
+  html+=Object.keys(groups).map(g=>`<div class="group"><h2>${g}</h2>${groups[g].join('')}</div>`).join('');
+  html+=dupont(c,p,hp);
+  const z=Z(c);
+  if(z!==null){const zp=hp?Z(p):null,st=zs(z);
+    html+=`<div class="group"><h2>Bankruptcy risk</h2><div class="ratio"><div><b>Altman Z′-score</b><span class="tag ${st}">${{good:'Safe',watch:'Grey zone',bad:'Distress'}[st]}</span></div><div class="val">${z.toFixed(2)}${zp!=null?arrow(z,zp,'x',1):''}</div><div class="read">${zt(z)} Thresholds: below 1.23 distress, 1.23 to 2.90 grey, above 2.90 safe. Leave retained earnings blank and it is treated as zero.</div></div></div>`;
+  }
+  out.innerHTML=html;
+}
+inputs.forEach(i=>i.addEventListener('input',render));
+$('#ex').onclick=()=>{
+  inputs.forEach(i=>i.value=EX[i.dataset.y][i.dataset.k]);
+  render();
+  $('#ex').textContent='Reload example';
+};
+$('#clr').onclick=()=>{
+  inputs.forEach(i=>i.value='');
+  render();
+  $('#ex').textContent='Load example';
+};
+$('#print').onclick=()=>window.print();
+render();
+</script>
+</body>
+</html>
